@@ -2,8 +2,8 @@
 #define GAME_SAPPER_SRC_GAME_GAME_H
 
 #include "scenes/Scene.h"
-
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <memory>
 
 
@@ -17,14 +17,18 @@ namespace Game {
         Game& operator=(Game&&) = delete;
         ~Game() = default;
 
-        void onCreate();
         void onEvent(const sf::Event& event);
-        void onUpdate();
+        void onUpdate(const sf::Time& elapsedTime);
         int execute();
+        sf::RenderWindow& getWindow();
+        void changeScene(std::unique_ptr<Scenes::Scene>&& scene);
 
     private:
+        void replaceScene();
+
         sf::RenderWindow m_window;
         std::unique_ptr<Scenes::Scene> m_scene;
+        std::unique_ptr<Scenes::Scene> m_replaceScene;
     };
 }
 

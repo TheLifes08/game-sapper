@@ -2,19 +2,21 @@
 #define GAME_SAPPER_SRC_GAME_SCENES_MAIN_MENU_SCENE_H
 
 #include "Scene.h"
+#include "../gui/TextButton.h"
 
 
 namespace Game {
     namespace Scenes {
         class MainMenuScene final : public Scene {
         public:
-            MainMenuScene(sf::RenderWindow& window);
-            void onCreate() override;
+            explicit MainMenuScene(Game& game);
             void onEvent(const sf::Event& event) override;
-            void onUpdate() override;
+            void onUpdate(const sf::Time& elapsedTime) override;
             ~MainMenuScene() override = default;
 
         private:
+            TextButton m_newGameButton;
+            TextButton m_exitButton;
         };
     }
 }

@@ -4,16 +4,15 @@
 #include "Scene.h"
 #include "../field/Field.h"
 #include "../field/FieldStatus.h"
-
+#include <iostream>
 
 namespace Game {
     namespace Scenes {
         class GameScene final : public Scene {
         public:
-            GameScene(sf::RenderWindow& window, size_t sizeX, size_t sizeY, size_t minesNumber);
-            void onCreate() override;
+            GameScene(Game& game, size_t sizeX, size_t sizeY, size_t minesNumber);
             void onEvent(const sf::Event& event) override;
-            void onUpdate() override;
+            void onUpdate(const sf::Time& elapsedTime) override;
             ~GameScene() override = default;
 
         private:

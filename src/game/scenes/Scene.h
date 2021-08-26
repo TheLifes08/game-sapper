@@ -5,17 +5,18 @@
 
 
 namespace Game {
+    class Game;
+
     namespace Scenes {
         class Scene {
         public:
-            Scene(sf::RenderWindow& window): m_window(window) {}
-            virtual void onCreate() = 0;
+            explicit Scene(Game& game): m_game(game) {}
             virtual void onEvent(const sf::Event& event) = 0;
-            virtual void onUpdate() = 0;
+            virtual void onUpdate(const sf::Time& elapsedTime) = 0;
             virtual ~Scene() = default;
 
         protected:
-            sf::RenderWindow& m_window;
+            Game& m_game;
         };
     }
 }

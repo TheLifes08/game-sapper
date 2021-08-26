@@ -1,22 +1,22 @@
 #include "GameScene.h"
+#include "../Game.h"
+#include "../audio/MusicManager.h"
+#include "MainMenuScene.h"
 #include <random>
 #include <iostream>
 
-Game::Scenes::GameScene::GameScene(sf::RenderWindow& window, size_t sizeX, size_t sizeY, size_t minesNumber)
-: Scene(window), m_field(sizeX, sizeY) {
+Game::Scenes::GameScene::GameScene(Game& game, size_t sizeX, size_t sizeY, size_t minesNumber)
+: Scene(game), m_field(sizeX, sizeY) {
     this->m_minesNumber = minesNumber;
     generateMines(minesNumber);
     calculateNearbyMinesCount();
-}
-
-void Game::Scenes::GameScene::onCreate() {
-
+    Audio::MusicManager::getInstance().playMusic("resources/music/game-theme.ogg");
 }
 
 void Game::Scenes::GameScene::onEvent(const sf::Event& event) {
     if (event.type == sf::Event::MouseButtonPressed) {
-        float rectangleSizeX = static_cast<float>(m_window.getSize().x) / static_cast<float>(m_field.getSizeX());
-        float rectangleSizeY = static_cast<float>(m_window.getSize().y) / static_cast<float>(m_field.getSizeY());
+        float rectangleSizeX = static_cast<float>(m_game.getWindow().getSize().x) / static_cast<float>(m_field.getSizeX());
+        float rectangleSizeY = static_cast<float>(m_game.getWindow().getSize().y) / static_cast<float>(m_field.getSizeY());
         size_t cellX = event.mouseButton.x / rectangleSizeX;
         size_t cellY = event.mouseButton.y / rectangleSizeY;
         Cell& cell = m_field.get(cellX, cellY);
@@ -32,27 +32,25 @@ void Game::Scenes::GameScene::onEvent(const sf::Event& event) {
         }
 
         if (getFieldStatus() == Field::FieldStatus::Lose) {
-            std::cerr << "LOSE!\n";
-            m_window.close();
+            m_game.changeScene(std::make_unique<MainMenuScene>(m_game));
         } else if (getFieldStatus() == Field::FieldStatus::Win) {
-            std::cerr << "WIN!\n";
-            m_window.close();
+            m_game.changeScene(std::make_unique<MainMenuScene>(m_game));
         }
     }
 }
 
-void Game::Scenes::GameScene::onUpdate() {
-    float rectangleSizeX = static_cast<float>(m_window.getSize().x) / static_cast<float>(m_field.getSizeX());
-    float rectangleSizeY = static_cast<float>(m_window.getSize().y) / static_cast<float>(m_field.getSizeY());
+void Game::Scenes::GameScene::onUpdate(const sf::Time& elapsedTime) {
+    float rectangleSizeX = static_cast<float>(m_game.getWindow().getSize().x) / static_cast<float>(m_field.getSizeX());
+    float rectangleSizeY = static_cast<float>(m_game.getWindow().getSize().y) / static_cast<float>(m_field.getSizeY());
     sf::RectangleShape shape(sf::Vector2f(rectangleSizeX, rectangleSizeY));
     sf::Font font;
     sf::Text text;
 
-    font.loadFromFile("/home/rkolovanov/CLionProjects/game-sapper/resources/arial.ttf");
+    font.loadFromFile("resources/fonts/arial.ttf");
     shape.setOutlineThickness(1.0);
     shape.setOutlineColor(sf::Color::Black);
     text.setFont(font);
-    text.setCharacterSize(24);
+    text.setCharacterSize(std::min(rectangleSizeX, rectangleSizeY) / 2);
     text.setFillColor(sf::Color::Black);
 
     for (size_t y = 0; y < m_field.getSizeY(); ++y) {
@@ -77,8 +75,8 @@ void Game::Scenes::GameScene::onUpdate() {
                 shape.setFillColor(sf::Color(100, 100, 100));
             }
 
-            m_window.draw(shape);
-            m_window.draw(text);
+            m_game.getWindow().draw(shape);
+            m_game.getWindow().draw(text);
             text.setString("");
         }
     }
@@ -158,21 +156,26 @@ void Game::Scenes::GameScene::checkCell(size_t x, size_t y) {
 Game::Field::FieldStatus Game::Scenes::GameScene::getFieldStatus() {
     size_t markedCells = 0;
     size_t markedMines = 0;
+    size_t uncheckedCells = 0;
 
     for (size_t y = 0; y < m_field.getSizeY(); ++y) {
         for (size_t x = 0; x < m_field.getSizeX(); ++x) {
             try {
                 Cell& cell = m_field.get(x, y);
 
-                if (cell.isMine && cell.isChecked) {
-                    return Game::Field::FieldStatus::Lose;
-                }
-
-                if (!cell.isChecked && cell.isMarked) {
+                if (cell.isChecked) {
                     if (cell.isMine) {
-                        ++markedMines;
+                        return Field::FieldStatus::Lose;
+                    }
+                } else {
+                    if (cell.isMarked) {
+                        if (cell.isMine) {
+                            ++markedMines;
+                        } else {
+                            ++markedCells;
+                        }
                     } else {
-                        ++markedCells;
+                        ++uncheckedCells;
                     }
                 }
             } catch (const std::invalid_argument&) {
@@ -181,9 +184,9 @@ Game::Field::FieldStatus Game::Scenes::GameScene::getFieldStatus() {
         }
     }
 
-    if (markedMines == m_minesNumber && markedCells == 0) {
-        return Game::Field::FieldStatus::Win;
+    if (markedMines == m_minesNumber && markedCells == 0 && uncheckedCells == 0) {
+        return Field::FieldStatus::Win;
     }
 
-    return Game::Field::FieldStatus::Unknown;
+    return Field::FieldStatus::Unknown;
 }
