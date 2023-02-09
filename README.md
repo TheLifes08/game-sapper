@@ -1,3 +1,3 @@
-# game-sapper
+# game-minesweeper
 
-Игра "Сапёр", написанная на языке С++ с использованием SFML.
+The game "Minesweeper", written in C++ using SFML.
